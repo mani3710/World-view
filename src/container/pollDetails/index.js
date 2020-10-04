@@ -8,6 +8,9 @@ import YoutubePlayer from "react-native-youtube-iframe";
 import ReactPolling from 'react-polling';
 import * as Progress from 'react-native-progress';
 import ProgressCircle from 'react-native-progress-circle'
+import firebase from '../../firebase';
+import firestore from '@react-native-firebase/firestore';
+import AsyncStorage from '@react-native-community/async-storage';
 import { Divider } from '../../components';
 const voteColor = [
     "gray",
@@ -26,16 +29,34 @@ export default class PollDetails extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            data: props.route.params.data
+            data: props.route.params.data,
+            email:"",
+            photo:"",
+            userName:""
         }
+        AsyncStorage.getItem("@email")
+        .then(email => {
+            AsyncStorage.getItem("@userName")
+            .then(userName => {
+                AsyncStorage.getItem("@profileImage")
+        .then(photo => {
+             this.setState({email:email,userName:userName,photo:photo})
+        }) 
+            })
+        })
     }
     onShare = async () => {
         try {
             let text = `
-            poll title : ${this.state.data.title}
+            poll title : ${this.state.data.title}\n  image:${this.state.data.image}
+            \n description: ${this.state.data.description}
+            \n option1:${this.state.data.pollingOption[0].title} \n option2:${this.state.data.pollingOption[1].title}
+            \n Which side you choose ? \n Download the App https://play.google.com/store/apps/details?id=com.wideview  
             `
             const result = await Share.share({
                 message: text,
+                url:this.state.data.image
+               
             });
             if (result.action === Share.sharedAction) {
                 if (result.activityType) {
@@ -50,13 +71,66 @@ export default class PollDetails extends React.Component {
             alert(error.message);
         }
     };
+   async getUserInfo(){
+        const pollVal = await firestore().collection('pollList').doc(`${this.state.data.id}`)
+            pollVal.get().then(async (doc) => {
+                console.log("data",doc._data);
+                // var val =doc._data ;
+                // val.voteFor = isVotedFor,
+                // val.isVoted = true
+                var oldVal=this.state.data;
+                oldVal.commends =doc._data.commends
+                this.setState({data:oldVal})  
+                          
+            }).catch(e=>{
+                console.log("error",e); 
+            });
+    }
+   async upDateUserVote(isVotedFor){
+        var voterList = this.state.data.voters;
+        const {email,photo,userName} = this.state;
+        voterList.push({
+            photo:photo,    
+            email:email,
+            name:userName,
+            votedFor:isVotedFor
+        });  
+        var voterDetails={
+            yellow:isVotedFor ==1 ? this.state.data.pollVotes.yellow+1:this.state.data.pollVotes.yellow,
+            black:isVotedFor ==2 ? this.state.data.pollVotes.black+1:this.state.data.pollVotes.black,
+            total: this.state.data.pollVotes.black+ this.state.data.pollVotes.yellow+1
+        }
+           
+        
+        const poll = await firestore().collection('pollList').doc(`${this.state.data.id}`);
+        poll.update({
+            voters :voterList,
+            pollVotes:voterDetails
+        }).then( async (res)=>{
+            console.log("success")
+            const pollVal = await firestore().collection('pollList').doc(`${this.state.data.id}`)
+            pollVal.get().then(async (doc) => {
+                console.log("data",doc._data);
+                var val =doc._data ;
+                val.voteFor = isVotedFor,
+                val.isVoted = true
+                this.setState({data:val})  
+                this.props.route.params.getLivePollData()            
+            }).catch(e=>{
+                console.log("error",e); 
+            });
+
+        }).catch(e=>{
+            console.log("Error",e)
+        })
+    }  
     renderOpinionBTN(){
       return(
         <Card
 
             containerStyle={{ elevation: 2, position: "absolute", width: 130, height: 40, borderColor: "transparent", right: 10, bottom: 20, borderRadius: 150 / 2, padding: 0, margin: 0, justifyContent: "center", alignItems: "center" }}>
             <TouchableOpacity
-            onPress={()=>{this.props.navigation.navigate("Comments")}}
+            onPress={()=>{this.props.navigation.navigate("Comments",{data:this.state.data,getUserInfo:this.getUserInfo.bind(this)})}}
             style={{ width: "100%", height: "100%", flexDirection: "row" }}>
                 <View style={{ flexDirection: "row", alignSelf: "center" }}>
                     <Icon
@@ -66,8 +140,8 @@ export default class PollDetails extends React.Component {
                     />
                     <Text style={{ fontSize: 10 }}>Write your comment</Text>
                 </View>
-            </TouchableOpacity>
-        </Card>
+            </TouchableOpacity>       
+        </Card> 
       );
     }
     renderComments(){
@@ -93,7 +167,7 @@ export default class PollDetails extends React.Component {
                             <FlatList
                                 data={this.state.data.commends}
                                 style={{ width: "100%" }}
-                                renderItem={({ item, index }) => {
+                                renderItem={({ item, index }) => {     
                                     return (
                                         <View style={{ width: "100%", alignItems: voteAlign[item.votedFor] }}>
                                             <Card containerStyle={
@@ -166,15 +240,27 @@ export default class PollDetails extends React.Component {
                     {(!this.state.data.isVoted && !this.state.data.isEnded) ?
                         <View style={{ width: "100%", padding: 15, flexDirection: "row", justifyContent: "space-around" }}>
                             <Card
+                            
                                 containerStyle={{ elevation: 5, borderRadius: 150 / 2, height: 120, width: 120, backgroundColor: colors.yellow, marginBottom: 10, justifyContent: "center", alignItems: "center" }}
                             >
+                                <TouchableOpacity
+                                onPress={()=>{this.upDateUserVote(1)}}
+                                style={{width:"100%",height:"100%",justifyContent: "center", alignItems: "center"}}>
                                 <Text style={{ color: colors.black, fontSize: 13, textAlign: "center", fontWeight: "bold" }}>{this.state.data.pollingOption[0].title}</Text>
+                                </TouchableOpacity>
+
+                                
                             </Card>
                             <Text style={{ color: "gray" }}>Tap to vote</Text>
                             <Card
                                 containerStyle={{ elevation: 5, borderRadius: 150 / 2, height: 120, width: 120, backgroundColor: colors.black, marginBottom: 10, justifyContent: "center", alignItems: "center" }}
-                            >
+                            >  
+                                <TouchableOpacity 
+                                 onPress={()=>{this.upDateUserVote(2)}}
+                                style={{width:"100%",height:"100%",justifyContent: "center", alignItems: "center"}}>
                                 <Text style={{ color: colors.yellow, fontSize: 13, textAlign: "center", fontWeight: "bold" }}>{this.state.data.pollingOption[1].title}</Text>
+                                    </TouchableOpacity>
+                               
                             </Card>
                         </View>
                         :
@@ -189,7 +275,7 @@ export default class PollDetails extends React.Component {
                                 bgColor="#fff"
                             >
                                 <Text numberOfLines={3} style={{ fontSize: 7, paddingHorizontal: 5, textAlign: "center" }}>{this.state.data.pollingOption[0].title}</Text>
-                                <Text style={{ fontWeight: "bold" }}>66%</Text>
+                                <Text style={{ fontWeight: "bold" ,color:colors.yellow }}>{parseInt((this.state.data.pollVotes.yellow / this.state.data.pollVotes.total) * 100)}%</Text>
                             </ProgressCircle>
 
                             <Text style={{ color: "gray",display:this.state.data.voteFor == 0?"none":"flex" }}>You voted for  <Text style={{ color: this.state.data.voteFor == 1 ? colors.yellow : colors.black }}>{this.state.data.voteFor == 1 ? "Yellow" : "Black"}</Text></Text>
@@ -203,7 +289,7 @@ export default class PollDetails extends React.Component {
                                 bgColor="#fff"
                             >
                                 <Text numberOfLines={3} style={{ fontSize: 7, paddingHorizontal: 5, textAlign: "center" }}>{this.state.data.pollingOption[1].title}</Text>
-                                <Text style={{ fontWeight: "bold" }}>34%</Text>
+                                <Text style={{ fontWeight: "bold"}}>{parseInt((this.state.data.pollVotes.black / this.state.data.pollVotes.total) * 100)}%</Text>
                             </ProgressCircle>
                         </View>
 

@@ -2,14 +2,59 @@ import React from 'react';
 import {Text,View,Image,KeyboardAvoidingView,TextInput} from 'react-native';
 import {Icon } from 'react-native-elements';
 import colors from '../../../assets/colors';
+import firebase from '../../firebase';
+import firestore from '@react-native-firebase/firestore';
+import AsyncStorage from '@react-native-community/async-storage';
 export default class CommentScreen extends React.Component{
     constructor(props){
         super(props);
         this.state={
-            commentText:""
+            commentText:"",
+            data:props.route.params.data,
+            email:"",
+            userName:"",
+            photo:""
+
         }
-        this.userCommentTextInput ={}
+        console.log("Datattt",this.state.data);
+        this.userCommentTextInput ={}  
+        AsyncStorage.getItem("@email")
+        .then(email => {
+            AsyncStorage.getItem("@userName")
+            .then(userName => {
+                AsyncStorage.getItem("@profileImage")
+        .then(photo => {
+             this.setState({email:email,userName:userName,photo:photo})
+        }) 
+            })
+        })
     }
+   async updateTheUSerComment(){
+        const poll = await firestore().collection('pollList').doc(`${this.state.data.id}`);
+        var commendsList = this.state.data.commends;
+        const {email,photo,userName,commentText,data} = this.state;
+        commendsList.push({
+            commend:commentText,
+            votedFor:data.voteFor,     
+            email:email,
+            image:photo,
+            name:userName
+
+        }); 
+        poll.update({
+            commends:commendsList
+        }).then(e=>{
+            this.props.route.params.getUserInfo().then(()=>{
+                this.props.navigation.goBack();
+            })
+             
+
+        }).catch(error=>{
+            console.log("error",error);
+        })
+
+    }
+    
     render(){
         return(
             <View
@@ -27,7 +72,7 @@ export default class CommentScreen extends React.Component{
                         style={{ width: 183, color: colors.Black, fontSize: 20, fontWeight: "700", marginLeft: 20 }}
                     >YOUR COMMENTS</Text>
                     <Text
-                    onPress={()=>{this.submit()}}
+                    onPress={()=>{this.updateTheUSerComment()}}
                         style={{  fontSize: 18, fontWeight: "bold", paddingHorizontal: 10, marginLeft: 50,opacity:this.state.commentText ? 1:0.54 }}
                     >Post</Text>
                 </View>
