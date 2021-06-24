@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-community/async-storage';
 import images from '../../../assets/images';
 import { Dialog } from 'react-native-simple-dialogs';
 
-import firebase from '../../firebase';   
+import firebase from '../../firebase';
 import firestore from '@react-native-firebase/firestore';
 export default class Profile extends React.Component {
     constructor(props) {
@@ -15,24 +15,24 @@ export default class Profile extends React.Component {
             profile: "",
             name: "",
             email: "",
-            isShowLogoutWarning:false,
-            userId:""
+            isShowLogoutWarning: false,
+            userId: ""
         }
-        AsyncStorage.getItem("@profileImage").then(  
+        AsyncStorage.getItem("@profileImage").then(
             (photo) => {
                 AsyncStorage.getItem("@userName").then(
                     (name) => {
-                        AsyncStorage.getItem("@email").then(  
+                        AsyncStorage.getItem("@email").then(
                             (email) => {
                                 AsyncStorage.getItem("@userId").then(
                                     (id) => {
-        console.log("idid",id);
-                                        
-                                        this.setState({ profile: photo, name: name, email: email,userId:id })
+                                        console.log("idid", id);
+
+                                        this.setState({ profile: photo, name: name, email: email, userId: id })
                                         this.getUserData();
                                     }
                                 )
-                               
+
                             }
                         )
                     }
@@ -40,26 +40,26 @@ export default class Profile extends React.Component {
             }
         )
     }
-    logoutFunc(){
-        this.setState({isShowLogoutWarning:false})
-        AsyncStorage.clear().then(()=>{
+    logoutFunc() {
+        this.setState({ isShowLogoutWarning: false })
+        AsyncStorage.clear().then(() => {
             this.props.navigation.replace("Splash")
         })
     }
     //  UNSAFE_componentWillMount(){
     //     this.getUserData()
     // }
-  async  getUserData(){
-      console.log("id",this.state.userId);
+    async getUserData() {
+        console.log("id", this.state.userId);
         const user = await firestore().collection('users').doc(`${this.state.userId}`);
-        user.get().then(async (doc) => { 
+        user.get().then(async (doc) => {
             this.setState({
-                profile:doc.__data.photo,
-                name:doc.__data.name,
-                email:doc._data.email        
+                profile: doc.__data.photo,
+                name: doc.__data.name,
+                email: doc._data.email
 
             })
-            });
+        });
     }
     render() {
         return (
@@ -77,7 +77,7 @@ export default class Profile extends React.Component {
                 <Text style={{ fontSize: 18, fontWeight: "bold", marginTop: 15 }}>{this.state.name}</Text>
                 <Text>{this.state.email}</Text>
                 <Button
-                onPress={()=>{this.setState({isShowLogoutWarning:true})}}
+                    onPress={() => { this.setState({ isShowLogoutWarning: true }) }}
                     title="LOGOUT"
                     containerStyle={{ backgroundColor: "transparent", marginTop: 35 }}
                     buttonStyle={{ backgroundColor: "transparent" }}
@@ -88,7 +88,7 @@ export default class Profile extends React.Component {
                 />
                 <View style={{ flexDirection: "row", marginTop: 10 }}>
                     <Icon name="language" size={15} color={colors.lightGray} containerStyle={{ marginRight: 5 }} />
-                    <Text style={{ fontSize: 12, color: colors.lightGray }}>POWERED BY WIDEVIEW</Text>
+                    <Text style={{ fontSize: 12, color: colors.lightGray }}>POWERED BY WORLDVIEW</Text>
                 </View>
                 <Dialog
                     visible={this.state.isShowLogoutWarning}
@@ -111,7 +111,7 @@ export default class Profile extends React.Component {
 
                     </View>
 
-  
+
 
                     <View style={{ alignItems: "center", flexDirection: "row", alignSelf: "center" }}>
                         <Button
@@ -120,7 +120,7 @@ export default class Profile extends React.Component {
                             containerStyle={{ marginTop: 10, alignSelf: "center" }}
                             title="YES"
                             titleStyle={{ color: "#d32f2f", fontWeight: "bold" }}
-                            onPress={() => { this.logoutFunc()  }}
+                            onPress={() => { this.logoutFunc() }}
 
                         />
 
@@ -129,12 +129,12 @@ export default class Profile extends React.Component {
                             style={{ width: "20%" }}
                         ></View>
                         <Button
-                           
+
                             buttonStyle={{ backgroundColor: "white" }}
                             containerStyle={{ marginTop: 10, alignSelf: "center" }}
                             title="No"
                             titleStyle={{ color: "#388E3C", fontWeight: "bold" }}
-                            onPress={() => { this.setState({ isShowLogoutWarning: false }) }}         
+                            onPress={() => { this.setState({ isShowLogoutWarning: false }) }}
 
                         />
 

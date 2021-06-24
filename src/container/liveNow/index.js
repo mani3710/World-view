@@ -11,14 +11,14 @@ import { Icon } from 'react-native-elements';
 import ProgressCircle from 'react-native-progress-circle'
 import firebase from '../../firebase';
 import firestore from '@react-native-firebase/firestore';
-import AsyncStorage from '@react-native-community/async-storage'; 
+import AsyncStorage from '@react-native-community/async-storage';
 export default class LiveNow extends React.Component {
-    constructor(props) {     
+    constructor(props) {
         super(props);
         this.state = {
             date: moment().format("dddd DD MMMM"),
             refreshing: false,
-            userEmail: "",  
+            userEmail: "",
             pollDataList: []
 
         }
@@ -38,10 +38,10 @@ export default class LiveNow extends React.Component {
         const user = await firestore().collection('pollList').where("isEnded", "==", false)
         user.get().then(async (doc) => {
             if (doc._docs.length) {
-                var data = [];   
+                var data = [];
                 doc.forEach((doc) => {
 
-    
+
                     try {
                         var i = doc.data();
 
@@ -53,9 +53,9 @@ export default class LiveNow extends React.Component {
 
                             }
                         }
-                    } catch (e) {   
+                    } catch (e) {
                         console.log("error", e)
-                        i.isVoted = false,  
+                        i.isVoted = false,
                             i.voteFor = 0
                     }
                     data.push(i);
@@ -80,7 +80,7 @@ export default class LiveNow extends React.Component {
                 }
                 scrollEnabled
                 style={{ flex: 1, backgroundColor: "white" }}>
-                <Text style={{ alignSelf: "center", fontSize: 30, fontWeight: "bold", marginTop: 22, borderBottomColor: colors.yellow, borderBottomWidth: 2, marginBottom: 20 }}>WIDE VIEW</Text>
+                <Text style={{ alignSelf: "center", fontSize: 30, fontWeight: "bold", marginTop: 22, borderBottomColor: colors.yellow, borderBottomWidth: 2, marginBottom: 20 }}>WORLD VIEW</Text>
                 <Divider
                     height={0.3}
                 />
@@ -142,7 +142,7 @@ export default class LiveNow extends React.Component {
                         return (
                             <TouchableOpacity
                                 onPress={() => {
-                                    this.props.navigation.navigate("PollDetails", { data: item,getLivePollData :this.getLivePollData.bind(this) })
+                                    this.props.navigation.navigate("PollDetails", { data: item, getLivePollData: this.getLivePollData.bind(this) })
                                 }}
                                 style={{ width: "100%", borderBottomColor: colors.lightGray, borderBottomWidth: 0.5, paddingHorizontal: 20, marginTop: 30, paddingBottom: 20 }}>
                                 <View style={{ flexDirection: "row", width: "100%", alignItems: "center" }}>
@@ -205,9 +205,9 @@ export default class LiveNow extends React.Component {
                                         </ProgressCircle>
                                         <Text style={{ color: "gray", fontSize: 10 }}>You voted for  <Text style={{ color: item.voteFor == 1 ? colors.yellow : colors.black }}>{item.voteFor == 1 ? "Yellow" : "Black"}</Text></Text>
                                         <ProgressCircle
-                                            percent={34}   
+                                            percent={34}
                                             radius={50}
-                                            borderWidth={8}  
+                                            borderWidth={8}
                                             color={colors.black}
                                             shadowColor={colors.lightGray}
                                             bgColor="#fff"
